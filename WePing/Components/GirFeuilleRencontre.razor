@@ -1,0 +1,116 @@
+﻿@using MudBlazor
+@using MudBlazor.Components
+@using WePing.Gir
+@inject IOptions<GirOptions> options
+@inject ILogger<GirFeuilleRencontre> _logger
+@inject IDialogService DialogService
+<MudContainer Class="p-4">
+    @if  (Rencontre!=null && Rencontre.EstPrete)
+    {
+
+
+        <MudSimpleTable FixedHeader="true" Bordered="true" Hover="true" Striped="true" Class="feuille-rencontre">
+            <thead>
+                <GirFeuilleRencontrePartieHeader Modele="Rencontre.Modele" />
+
+            </thead>
+            <tbody>
+                @foreach (var partie in Rencontre.Parties.OrderBy(x => x.Index))
+                {
+                    <GirFeuilleRencontrePartie Modele="Rencontre.Modele" Partie="partie" OnRowClicked="async (e)=>await OuvreDialogueAsync(partie)" />
+
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="@(((NombreMancheGagnante * 2) - 1)+6)" class="text-end">Total des points de chaque equipe</td>
+                    <td class="text-center">@Rencontre.ScoreA</td>
+                    <td class="text-center">@Rencontre.ScoreB</td>
+                </tr>
+            </tfoot>
+        </MudSimpleTable>
+    }
+    else
+    {
+        <MudText Color="Color.Error" Typo="Typo.body1">La préparation de la rencontre ne permet pas la saisie des matchs</MudText>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public Rencontre Rencontre { get; set; }
+    private ModeleRencontre Modele => Rencontre?.Modele;
+    private int NombreMancheGagnante => Modele?.NombreMancheGagnante ?? 3;
+    public int NombrePartie => Modele?.NombreDePartie ?? 0;
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+    }
+
+    public override async Task SetParametersAsync(ParameterView parameters)
+    {
+
+        if (!parameters.TryGetValue<int>(nameof(NombreMancheGagnante), out var value))
+        {
+
+        }
+        await base.SetParametersAsync(parameters);
+    }
+
+    private bool JoueurAGagne(Partie partie) => partie.JoueurAGagne;
+    private bool JoueurBGagne(Partie partie) => partie.JoueurBGagne;
+    private async Task OuvreDialogueAsync(Partie partie)
+    {
+        if (partie.EstDouble && (string.IsNullOrEmpty(partie.JoueurA) || string.IsNullOrEmpty(partie.JoueurB)))
+        {
+            await OuvreConstitutionDoubleAsync(partie);
+        }
+        else
+        {
+            await OuvreSaisieScoreDialogueAsync(partie);
+        }
+    }
+    private async Task OuvreConstitutionDoubleAsync(Partie partie)
+    {
+
+        _logger.LogInformation($"Ouvre dialogue {nameof(OuvreConstitutionDoubleAsync)} {partie.Index}");
+        var opts = new DialogOptions()
+            {
+                FullWidth = true,  //Sets the dialog to its full width even if content is smaller
+                MaxWidth = MaxWidth.Large,//Sets the max width of the dialog
+
+            };
+
+        //Calcule du nombre du double de partie
+        var parties_double = Rencontre.Parties.Where(p => p.EstDouble).OrderBy(p => p.Index);
+        var nb_double = parties_double.Count(p => p.EstDouble && p.Index<partie.Index)      +1;
+
+        var parameters = new DialogParameters();
+        parameters.Add("Partie", partie);
+        parameters.Add("Rencontre", Rencontre);
+        parameters.Add("NumeroDouble", nb_double);
+
+        var dlg = DialogService.Show<GirFeuilleRencontreConstitutionDoubleDialogue>($"Constitution Double {nb_double}", parameters, opts);
+        var result = await dlg.Result;
+        //await InvokeAsync(() => StateHasChanged());
+
+    }
+    private async Task OuvreSaisieScoreDialogueAsync(Partie partie)
+    {
+        _logger.LogInformation($"Ouvre dialogue {nameof(OuvreSaisieScoreDialogueAsync)} {partie.Index}");
+        var opts = new DialogOptions()
+            {
+                FullWidth = true,  //Sets the dialog to its full width even if content is smaller
+                MaxWidth = MaxWidth.Large//Sets the max width of the dialog
+            };
+
+        var parameters = new DialogParameters();
+        parameters.Add("Partie", partie);
+
+        var dlg = DialogService.Show<GirFeuilleRencontreSaisieScoreDialogue>("Saisie de Partie", parameters, opts);
+        var result = await dlg.Result;
+        //await InvokeAsync(() => StateHasChanged());
+        //StateHasChanged();
+    }
+}

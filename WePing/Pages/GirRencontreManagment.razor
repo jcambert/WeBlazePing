@@ -1,0 +1,102 @@
+﻿@page "/gir-rencontre-mngt"
+@using Microsoft.EntityFrameworkCore
+@using WePing.Gir
+@inject IDbContextFactory<GirContext> contextFactory
+@inject ILogger<GirRencontreManagment> _logger
+@inject ISnackbar Snackbar
+<PageTitle>Gir Rencontre</PageTitle>
+<MudOverlay Visible="_loading" DarkBackground="true">
+    @if (!_dbAvailable)
+    {
+        <MudText Color="Color.Error" Typo="Typo.h1">DATABASE CONNEXION UNAVAILABLE</MudText>
+    }
+    <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+</MudOverlay>
+<MudToolBar>
+    <MudMenu Label="Rencontre" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomLeft">
+        <MudMenuItem OnClick="(e)=>OpenRencontre()">Ouvrir</MudMenuItem>
+        <MudMenuItem OnClick="(e)=>NewRencontre()">Nouvelle...</MudMenuItem>
+        <MudMenuItem OnClick="async (e)=>await BackupRencontre()">Sauvegarder</MudMenuItem>
+    </MudMenu>
+    <MudIconButton Icon="@Icons.Material.Outlined.Menu" Color="Color.Inherit" Class="mr-5" />
+    <MudIconButton Icon="@Icons.Material.Outlined.Add" />
+    <MudIconButton Icon="@Icons.Material.Outlined.Edit" />
+    <MudIconButton Icon="@Icons.Material.Outlined.Remove" Color="Color.Inherit" />
+    <MudIconButton Icon="@Icons.Material.Outlined.Settings" Color="Color.Inherit" />
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Material.Outlined.Notifications" />
+    <MudIconButton Icon="@Icons.Material.Outlined.PushPin" />
+    <MudIconButton Icon="@Icons.Material.Outlined.PeopleAlt" />
+    <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
+</MudToolBar>
+<MudContainer>
+    @if (Rencontre != null)
+    {
+        <MudItem xs="12">
+            <MudForm @ref="form" @bind-IsValid="@success" @bind-Errors="@errors">
+                <MudTextField @bind-Value="@Rencontre.NombreDePartie" Label="Nombre de parties" Required="true" RequiredError="Nombre de parties invalides" />
+            </MudForm>
+        </MudItem>
+    }
+</MudContainer>
+
+@code {
+    MudForm form;
+    bool success;
+    string[] errors = { };
+    private Rencontre Rencontre = null;
+
+    private bool _loading = false;
+    private bool _dbAvailable = false;
+    protected override async Task OnInitializedAsync()
+    {
+
+        using (var ctx = await contextFactory.CreateDbContextAsync())
+        {
+            _dbAvailable = await ctx.Database.CanConnectAsync();
+        }
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+
+        
+        _loading = true;
+        if (_dbAvailable)
+            _loading = false;
+        StateHasChanged();
+    }
+    private void OpenRencontre()
+    {
+        _logger.LogInformation($"{nameof(OpenRencontre)}");
+    }
+
+    private void NewRencontre()
+    {
+        _logger.LogInformation($"{nameof(NewRencontre)}");
+        Rencontre = new Rencontre();
+    }
+
+    private async Task BackupRencontre()
+    {
+        _logger.LogInformation($"Execute {nameof(BackupRencontre)}");
+        _loading = true;
+        try
+        {
+
+
+            using (var ctx = await contextFactory.CreateDbContextAsync())
+            {
+                await ctx.Rencontre.AddAsync(Rencontre);
+                await ctx.SaveChangesAsync();
+                Snackbar.Add("Rencontre sauvegardée avec succès", Severity.Success);
+            }
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add("Rencontre non sauvegardée ", Severity.Error);
+            _logger.LogError(e.Message);
+        }
+        _loading = false;
+        _logger.LogInformation($"{nameof(BackupRencontre)} Executed");
+    }
+}

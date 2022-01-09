@@ -1,0 +1,99 @@
+﻿@using MudBlazor.Components
+@using WePing.Gir
+
+
+<MudItem xs="12" md="6">
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <MudText Color="Color.Error">@ErrorMessage</MudText>
+    }
+    else
+    {
+        <MudSimpleTable>
+            <thead>
+                <tr>
+                    <td>Club</td>
+                    <td colspan="5">@Club</td>
+                    <td><MudText>@TotalPoints Points</MudText></td>
+                </tr>
+                <tr>
+                    <td>N°</td>
+                    <td></td>
+                    <td></td>
+                    <td>Nom-Prenom</td>
+                    <td>Points</td>
+                    <td>Muté<br />Etranger</td>
+                    <td>Cartons</td>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var joueur in Joueurs)
+                {
+                    <tr>
+                        @if (joueur.Absent)
+                        {
+                            <td colspan="6"></td>
+                        }
+                        else
+                        {
+                            <td><MudText >@joueur.Licence</MudText> </td>
+                            @if (!joueur.EstRemplacant)
+                            {
+                                <td><MudIcon Icon="far fa-play-circle"></MudIcon></td>
+
+                            }
+                            else
+                            {
+                             <td><MudIcon Icon="far fa-pause-circle"></MudIcon></td>
+                                
+                            }
+                            <td><MudText Typo="Typo.caption">@joueur.Ordre</MudText></td>
+                            <td><MudText>@joueur.Nom @joueur.Prenom</MudText> </td>
+                            <td><MudText>@joueur.Points</MudText>  </td>
+                            <td></td>
+                            <td></td>
+
+                        }
+
+
+                    </tr>
+
+                }
+
+            </tbody>
+            <tfoot></tfoot>
+        </MudSimpleTable>
+    }
+
+
+</MudItem>
+
+
+@code {
+    [Parameter]
+    public Rencontre Rencontre { get; set; }
+
+    [Parameter]
+    public string Club { get; set; }
+
+    private List<Joueur> Joueurs => Rencontre.Joueurs.Where(j => j.NumeroClub == Club).ToList();
+
+    private string ErrorMessage { get; set; }
+
+    private double TotalPoints{ get; set; }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        ErrorMessage = "";
+        if (!Rencontre.Preparer(out var errorMessage, Club))
+        {
+            ErrorMessage = errorMessage;
+            return;
+        }
+        TotalPoints = Joueurs.Sum(j => j.NumeroClub == Club ? j.Points : 0);
+    }
+
+
+}

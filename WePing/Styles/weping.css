@@ -1,0 +1,45 @@
+﻿.appbar-search {
+  color: var(--mud-palette-primary-text); }
+
+.wrap-text {
+  overflow: hidden; }
+
+.clickable-text:hover {
+  cursor: pointer; }
+
+.feuille-rencontre .empty {
+  background-image: -o-linear-gradient(top left, transparent calc(50% - 1px), red, transparent calc(50% + 1px));
+  background-image: linear-gradient(to bottom right, transparent calc(50% - 1px), red, transparent calc(50% + 1px)); }
+
+.feuille-rencontre .empty:hover {
+  cursor: pointer; }
+
+.blinking > span {
+  -webkit-animation: blinkingText 1.2s infinite;
+          animation: blinkingText 1.2s infinite; }
+
+@-webkit-keyframes blinkingText {
+  0% {
+    color: #000; }
+  49% {
+    color: #000; }
+  60% {
+    color: transparent; }
+  99% {
+    color: transparent; }
+  100% {
+    color: #000; } }
+
+@keyframes blinkingText {
+  0% {
+    color: #000; }
+  49% {
+    color: #000; }
+  60% {
+    color: transparent; }
+  99% {
+    color: transparent; }
+  100% {
+    color: #000; } }
+
+/*# sourceMappingURL=.\Styles\weping.css.map */

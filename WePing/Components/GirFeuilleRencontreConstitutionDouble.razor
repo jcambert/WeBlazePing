@@ -1,0 +1,100 @@
+﻿@using WePing.Gir
+@using MudBlazor.Components
+
+@inject ILogger<GirFeuilleRencontreConstitutionDouble> _logger
+
+@foreach (var joueur in Equipe)
+{
+    string ordre = joueur.Ordre;
+    bool Checked = false;
+
+    _logger.LogInformation($"{string.Join("-", DoubleEngage)}");
+    if (DoubleEngage.Contains(ordre))
+    {
+        Checked = true;
+    }
+    <MudElement HtmlTag="tr" Style="@( MontrerEquipe  ?"visibility:visible":"visibility:hidden")">
+        <td>
+            <MudCheckBox Disabled="CheckDisabled(joueur)" T="bool" Checked="@Checked" CheckedChanged="( bool e)=>SelectJoueur( joueur,e)" Label="@($"{joueur.Ordre}  - {joueur.Nom} {joueur.Prenom}")"></MudCheckBox>
+        </td>
+    </MudElement>
+
+
+}
+<tr>
+    <td>
+        <MudToggleIconButton @bind-Toggled="MontrerEquipe"
+                             Icon="@Icons.Material.Filled.VisibilityOff" Color="@Color.Error" Title="Off"
+                             ToggledIcon="@Icons.Material.Filled.Visibility" ToggledColor="@Color.Success" ToggledTitle="On" Style="@( DoubleEngage.Count==2?"visibility:visible":"visibility:hidden")" />
+
+    </td>
+</tr>
+
+@code {
+    [Parameter]
+    public Rencontre Rencontre { get; set; }
+
+    [Parameter]
+    public Partie Partie { get; set; }
+
+    [Parameter]
+    public List<Joueur> Equipe { get; set; }
+
+
+    [Parameter]
+    public List<string> DoubleEngage { get; set; }
+
+    [Parameter]
+    public Func<Partie, string> JoueurLettre { get; set; }
+
+    [Parameter]
+    public EventCallback OnDoubleChange { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnDoubleComplet { get; set; }
+
+    private List<Joueur> JoueursA;
+
+    private bool MontrerEquipe { get; set; }
+
+    private bool ParticipationUniqueAuDouble => Rencontre.Modele.ParticipationUniqueAuDouble;
+
+    private string NumeroClub => Equipe.FirstOrDefault()?.NumeroClub ?? string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+    }
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        MontrerEquipe = true;
+        if (Equipe.Count() == 2)
+        {
+            DoubleEngage.Clear();
+            foreach (var joueur in Equipe)
+            {
+                SelectJoueur(joueur, true);
+            }
+        }
+    }
+    bool CheckDisabled(Joueur j)
+    {
+        bool res = DoubleEngage.Count == 2 && !DoubleEngage.Any(d => d == j.Ordre);
+        return res;
+    }
+
+    void SelectJoueur(Joueur j, object o)
+    {
+        bool value = (bool)o;
+        if (value)
+            DoubleEngage.Add(j.Ordre);
+        else
+            DoubleEngage.Remove(j.Ordre);
+        if (OnDoubleChange.HasDelegate)
+            OnDoubleChange.InvokeAsync();
+        if (OnDoubleComplet.HasDelegate)
+            OnDoubleComplet.InvokeAsync(DoubleEngage.Count == 2);
+
+    }
+}

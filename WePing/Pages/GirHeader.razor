@@ -1,0 +1,74 @@
+﻿@using WePing.Gir
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<GirContext> contextFactory
+@inject ILogger<GirHeader> _logger
+@inject ISnackbar Snackbar
+<MudOverlay Visible="_loading" DarkBackground="true"  Style="text-center">
+    @if (!_dbAvailable)
+    {
+        <MudText Color="Color.Error" Typo="Typo.h1">DATABASE CONNEXION UNAVAILABLE</MudText>
+    }
+    <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+</MudOverlay>
+<MudContainer MaxWidth="MaxWidth.False" Style="padding-left:0px !important;padding-right:0px !important;margin-left:0px !important;margin-right:0px !important">
+    <MudPaper Width="100%">
+        <MudToolBar>
+            <MudMenu Label="Rencontre" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomLeft">
+                <MudMenuItem OnClick="OnOpenRencontre">Ouvrir</MudMenuItem>
+                <MudMenuItem OnClick="OnNewRencontre">Nouvelle...</MudMenuItem>
+                <MudMenuItem OnClick="OnBackupRencontre">Sauvegarder</MudMenuItem>
+            </MudMenu>
+        </MudToolBar>
+    </MudPaper>
+
+</MudContainer>
+
+@code {
+    private bool _loading = false;
+    private bool _dbAvailable = false;
+    protected override async Task OnInitializedAsync()
+    {
+        #if DEBUG
+        _dbAvailable=true;
+        #else
+        using (var ctx = await contextFactory.CreateDbContextAsync())
+        {
+            _dbAvailable = await ctx.Database.CanConnectAsync();
+        }
+        #endif
+        await SetIsLoadingAsync( true);
+        if (_dbAvailable)
+            await SetIsLoadingAsync( false);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+
+        //StateHasChanged();
+    }
+
+    public async Task SetIsLoadingAsync(bool value)
+    {
+
+        if (value != _loading)
+        {
+            _loading = value;
+            await OnLoading.InvokeAsync(_loading);
+
+        }
+    }
+    public bool IsLoading => _loading;
+
+    [Parameter]
+    public EventCallback<bool> OnLoading { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnOpenRencontre { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnNewRencontre { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnBackupRencontre { get; set; }
+
+}

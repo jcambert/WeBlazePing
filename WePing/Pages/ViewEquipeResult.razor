@@ -1,0 +1,111 @@
+﻿@page "/result_equ"
+@using Domain.ResultatEquipe.Queries
+@using WePing.Domain.Rencontres.Queries
+@using WePing.Domain.ResultatEquipe.Domain
+@using WePing.Service.Spid
+@inject ISpidRequest spidRequest
+@inject ILogger<ViewEquipeResult> _logger
+@inject Navigation Navigation
+<PageTitle>ResultatEquipe</PageTitle>
+
+<MudContainer Class="p-4">
+    <MudItem xs="12" Class="py-8">
+        <MudSimpleTable>
+            <thead>
+                <th>Classement</th><th>Equipe</th><th>Points</th><th>Joue</th><th>Gagne/Nul/Perdu</th><th>PG/PP</th>
+            </thead>
+            <tbody>
+                @foreach (var clt in Classement.Classements)
+                {
+                    <tr><td>@clt.Classement</td><td>@clt.Equipe</td><td>@clt.Points</td><td>@clt.Joue</td><td>@clt.Victoire-@clt.Nul-@clt.Defaite</td><td>@clt.SetVictoire-@clt.SetDefaite</td></tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    </MudItem>
+    <MudGrid Spacing="5" Justify="Justify.FlexStart">
+
+        @foreach (var tour in Rencontres.Rencontres.GroupBy(r => r.Libelle))
+        {
+
+            <MudItem xs="12" md="4" Class="py-8">
+                <MudCard Outlined="true">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText>@tour.Key</MudText>
+
+                        </CardHeaderContent>
+
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudSimpleTable Hover="true" Striped="true">
+                            <tbody>
+                                @foreach (var rencontre in tour)
+                                {
+
+                                    <tr>
+                                        <td>
+                                            <MudText Inline="true" Typo="Typo.caption" Color="GetScoreColor(rencontre).Item1">@rencontre.EquipeA</MudText>
+                                        </td>
+                                        <td style="min-width:75px">
+                                            <MudText Inline="true" Typo="Typo.caption">@rencontre.ScoreA-@rencontre.ScoreB</MudText>
+                                        </td>
+                                        <td>
+                                            <MudText Inline="true" Typo="Typo.caption"  Color="GetScoreColor(rencontre).Item2">@rencontre.EquipeB</MudText>
+                                        </td>
+                                        <td>
+                                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick=" (e)=>LoadDetailRencontre(rencontre)">Détail</MudButton>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+</MudContainer>
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Cx_Poule { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string D1 { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Organisme_pere { get; set; }
+
+    public ListeResultatEquipeClassements Classement { get; init; } = new ListeResultatEquipeClassements();
+    public ListeResultatEquipeRencontres Rencontres { get; init; } = new ListeResultatEquipeRencontres();
+    protected override async Task OnParametersSetAsync()
+    {
+        Classement.Classements.Clear();
+        var clt = await spidRequest.GetResultatEquipeClassementAsync(new BrowseResultatEquipeClassements() { Cx_poule = Cx_Poule, D1 = D1 });
+        Classement.Classements.AddRange(clt);
+
+        Rencontres.Rencontres.Clear();
+        var rencontres = await spidRequest.GetResultatEquipeRencontreAsync(new BrowseResultatEquipeRencontres() { Cx_poule = Cx_Poule, D1 = D1 });
+        Rencontres.Rencontres.AddRange(rencontres);
+        StateHasChanged();
+    }
+    private (Color,Color) GetScoreColor(ResultatEquipeRencontre rencontre)
+    {
+        if(Int32.TryParse(rencontre.ScoreA,out var scorea) && Int32.TryParse(rencontre.ScoreB, out var scoreb))
+        {
+            if (scorea > scoreb) return (Color.Success, Color.Error);
+            if (scorea < scoreb) return (Color.Error, Color.Success);
+        }
+        return (Color.Default, Color.Default);
+    }
+
+    private void LoadDetailRencontre(ResultatEquipeRencontre rencontre)
+    {
+        _logger.LogInformation($"Try loading detail rencontre {rencontre.Lien}");
+        ///var res =await spidRequest.GetDetailRencontre(new GetRencontre() { Lien = rencontre.Lien });
+
+        var cla=Classement.Classements.Where(c => c.Equipe == rencontre.EquipeA).FirstOrDefault();
+        var clb=Classement.Classements.Where(c => c.Equipe == rencontre.EquipeB).FirstOrDefault();
+        Navigation.NavigateTo($"/rencontre-detail/{cla.Numero}/{clb.Numero}?{rencontre.Lien}");
+    }
+}

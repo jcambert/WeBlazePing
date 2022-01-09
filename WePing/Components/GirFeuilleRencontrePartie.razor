@@ -1,0 +1,44 @@
+﻿@using WePing.Gir
+@using MudBlazor.Components
+
+<tr @onclick="@OnRowClicked">
+    <td width="15px">
+        <MudBadge Dot="true" Color="GetPartieColor(Partie)" Overlap="true" Class="blinking">
+            <MudChip Label="true" Color="Color.Default" Style="color:black;" Size="Size.Small">@Partie.Index</MudChip>
+        </MudBadge>
+    </td>
+    <GirFeuilleRencontreScores Partie="Partie" NombreMancheGagnante="NombreMancheGagnante" />
+    <td class="text-start" width="15px">@Partie.JoueurA</td>
+    <td class="text-start">@Partie.NomJoueurA</td>
+    <td class="text-center" width="5px">-</td>
+    <td class="text-start" width="15px">@Partie.JoueurB</td>
+    <td class="text-start">@Partie.NomJoueurB</td>
+    <td class="text-center" width="15px">@(Partie.JoueurAGagne?1:0)</td>
+    <td class="text-center" width="15px">@(Partie.JoueurBGagne?1:0)</td>
+</tr>
+
+@code {
+
+    [Parameter]
+    public Partie Partie { get; set; }
+
+    [Parameter]
+    public ModeleRencontre Modele { get; set; }
+
+    private int NombreMancheGagnante => Modele?.NombreMancheGagnante ?? 3;
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnRowClicked { get; set; }
+
+   
+
+    private Color GetPartieColor(Partie partie)
+    {
+
+        if (partie.EstFinie)
+            return Color.Success;
+        if (partie.EnCours)
+            return Color.Warning;
+        return Color.Error;
+    }
+}

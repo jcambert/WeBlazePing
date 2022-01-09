@@ -1,0 +1,91 @@
+﻿@using WePing.Gir
+@using MudBlazor.Components
+@inject ILogger<GirFeuilleRencontreSaisieScoreDialogue> _logger;
+<MudDialog>
+    <DialogContent>
+        <MudContainer>
+            <MudGrid Spacing="2" Justify="Justify.FlexStart">
+                @if (_scores != null)
+                {
+                    @for (var i = 0; i < _scores.Length; i++)
+                    {
+                        int _i = i;
+                        bool _fini = EstFini;
+                        <MudItem xs="2">
+                            <MudNumericField Disabled="EstInactif(_i)" ReadOnly="@(EstFini || (_i>1?_scores[_i-1]==null:false) )" @bind-Value="@_scores[_i]" HelperText="@($"Score manche {_i+1}")" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Delete" AdornmentColor="Color.Error" OnAdornmentClick="(e)=>SupprimerScore(_i)"/>
+                        </MudItem>
+                    }
+                }
+
+            </MudGrid>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" OnClick="Save">Enregistrer</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="Close">Quitter</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Partie Partie { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose{ get; set; }
+
+    int NombreTotalDeManche => Partie?.NombreMancheGagnante * 2 - 1 ??0;
+    void Save()
+    {
+        Partie.Scores.Clear();
+        foreach (var (index,value) in _scores.Where(_s=>_s!=null).Select((i,v)=>(v,i)))
+        {
+            Partie.SetScore(index + 1, value??Int32.MinValue);
+        }
+        // Array.Copy( _scores,Partie.Scores, Partie.Scores.Length);
+        MudDialog.Close(_scores);
+    }
+    void Close()
+    {
+        MudDialog.Cancel();
+        if (OnClose.HasDelegate)
+            Task.Run(() => OnClose.InvokeAsync());
+    }
+
+    void SupprimerScore(int index)
+    {
+        _logger.LogInformation($"Try to Delete score {index}");
+        for(var i = index; i < _scores.Length-1; i++){
+            _scores[i] = _scores[i+1];
+        }
+        _scores[_scores.Length - 1] = null;
+    }
+
+    int?[] _scores=new int?[0];
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        _scores = new int?[NombreTotalDeManche];
+        var ps = Partie.Scores.Where(s => s.Valeur != null);
+        Array.Copy(ps.Take(ps.Count()>NombreTotalDeManche?NombreTotalDeManche:ps.Count()).Select(x=>x.Valeur).ToArray(), _scores, ps.Count());
+
+        _logger.LogInformation(string.Join("-", _scores));
+
+        StateHasChanged();
+    }
+
+    private bool EstFini=>_scores.Where(s => s != null).Select(s => s ?? 0).Count(s => s >= 0) >= Partie?.NombreMancheGagnante  || _scores.Where(s => s != null).Select(s => s ?? 0).Count(s => s < 0) >= Partie?.NombreMancheGagnante ;
+
+    private bool EstInactif(int index)
+    {
+
+        var res = index>=_scores.Where(s=>s!=null).Count() && EstFini;
+        return res;
+    }
+
+
+}

@@ -1,0 +1,95 @@
+﻿@page "/"
+
+@implements IDisposable
+
+@using FluentValidation.Results
+@using Microsoft.Extensions.Options
+@using WePing.Gir
+@using WePing.Gir.Commands
+@using WeMediatCrud
+
+
+@inject IOptions<GirOptions> girOptions
+@inject ILogger<GirIndex> _logger
+@inject ISnackbar Snackbar
+@inject IRepository<GirContext,Rencontre,Guid> Repository
+@inject IListQuery<Rencontre, Guid> ListQuery
+@inject IMediatorAction _mediator
+
+<GirHeader OnLoading="(e)=>onloading(e)"></GirHeader>
+<MudContainer Class="p-4">
+    <MudGrid Justify="Justify.FlexStart">
+        <GirFeuilleEquipe Rencontre="Rencontre" Club="02900041" />
+        <GirFeuilleEquipe Rencontre="Rencontre" Club="02900042" />
+    </MudGrid>
+</MudContainer>
+
+<GirFeuilleRencontre Rencontre="Rencontre" />
+
+@code {
+    private IDisposable _onerror;
+    private Rencontre Rencontre { get; set; }
+
+
+
+    private void onloading(bool value)
+    {
+        _logger.LogInformation($"LOADIND {value}");
+    }
+
+    protected override async  Task OnParametersSetAsync()
+    {
+        GirOptions opt = girOptions.Value;
+        var modeles = opt.Modele;
+        //var model = modeles["I_203_3_2"]; //4 joueurs 18 Rencontres
+        var model = modeles["Pro_A"]; //3 joueurs (+1 remplacemnt/equipe) 5 Rencontres 
+        Rencontre rencontre = new Rencontre() { Modele = model,EquipeDomicile="02900041",EquipeAdverse="02900042" };
+        //rencontre.Joueurs.Add(new Joueur() { Nom = "Ambert", Prenom = "Jean-Christophe", Licence = "905821", NumeroClub = "02900041", Points = 596 });
+        rencontre.Joueurs.Add(new Joueur() { Nom = "Ambert", Prenom = "Loic", Licence = "905822", NumeroClub = "02900041", Points = 796 });
+        rencontre.Joueurs.Add(new Joueur() { Nom = "Stouf", Prenom = "Jean-Christophe", Licence = "905823", NumeroClub = "02900041", Points = 1260 });
+        rencontre.Joueurs.Add(new Joueur() { Nom = "Widemann", Prenom = "Jean-Marie", Licence = "905824", NumeroClub = "02900041", Points = 896 });
+
+        rencontre.Joueurs.Add(new Joueur() { Nom = "Widemann", Prenom = "Jean-Marie", Licence = "905824", NumeroClub = "02900042", Points = 896 });
+        rencontre.Joueurs.Add(new Joueur() { Nom = "Stouf", Prenom = "Jean-Christophe", Licence = "905823", NumeroClub = "02900042", Points = 1260 });
+        rencontre.Joueurs.Add(new Joueur() { Nom = "Ambert", Prenom = "Loic", Licence = "905822", NumeroClub = "02900042", Points = 796 });
+        rencontre.Joueurs.Add(new Joueur() { Nom = "Ambert", Prenom = "Jean-Christophe", Licence = "905821", NumeroClub = "02900042", Points = 596 });
+
+        if(!rencontre.Preparer(out var errorMessage))
+        {
+            Snackbar.Add(errorMessage, Severity.Error);
+        }else{
+
+            rencontre.Parties[0].SetScore(1, 10);// Scores.Add(new Score(){Valeur=10});
+            rencontre.Parties[1].SetScore(1,-5);//.Scores.Add(new Score(){Valeur=-5});
+            rencontre.Parties[1].SetScore(2,-3);//.Scores.Add(new Score(){Valeur=-3});
+            rencontre.Parties[1].SetScore(3, 8);// .Scores.Add(new Score(){Valeur=8});
+            rencontre.Parties[2].SetScore(1, 3);// Scores.Add(new Score(){Valeur=3});
+            rencontre.Parties[2].SetScore(2, 4);// .Scores.Add(new Score(){Valeur=4});
+            rencontre.Parties[2].SetScore(3, 5);// .Scores.Add(new Score(){Valeur=5});
+        }
+        Rencontre = rencontre;
+
+       _mediator.OnError.Subscribe(response => response.Errors.ToList().ForEach(message=> Snackbar.Add(message, Severity.Error)));
+
+        //var rrencontres=await Mediator.Send<(int, IReadOnlyList<Rencontre>)>(ListQuery);
+
+        //var rencontres = Repository.GetMultiple(false);
+
+        await base.OnParametersSetAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var j = await _mediator.Send(new AddJoueurToRencontreCommand() {Licence="12345678", NumeroClub="029000410",Rencontre=Rencontre }).ConfigureAwait(false);
+
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    public  void Dispose()
+    {
+        _onerror?.Dispose();
+    }
+}

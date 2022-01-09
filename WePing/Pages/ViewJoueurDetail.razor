@@ -1,0 +1,223 @@
+﻿@page "/joueur-detail/{id?}"
+@using System.Globalization
+@using Domain.Joueurs.Queries
+@using Domain.ClubDetails.Queries
+@using WePing.Domain.Club.Queries
+@using WePing.Domain.Joueurs.Domain
+@using WePing.Domain.Club.Domain
+@using WePing.Domain.ClubDetails.Domain
+@using WePing.Service.Spid
+@inject ISpidRequest spidRequest
+@inject ILogger<ViewClubDetail> _logger
+@inject NavigationManager NavigationManager
+<PageTitle>Detail Joueur</PageTitle>
+@if (Joueur != null && ClubDetail != null )
+{
+    <PageTitle>Detail Joueur @Joueur.Nom @Joueur.Prenom</PageTitle>
+    <MudContainer Class="py-4 p-4">
+        <MudItem xs="12" Class="py-4 d-none d-sm-flex">
+            <MudCard Class="pa-2 " Outlined="true" Square="true">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h4"><i>@Joueur.Nom @Joueur.Prenom</i></MudText>
+
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6"><i>n°@Joueur.Licence</i></MudText>
+
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" @onclick="(e)=>ViewClubDetail(Joueur.NumeroClub)"><i>@Joueur.NomClub</i></MudButton>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Color="Color.Default" OnClick="(evt)=>AddFavouriteJoueur(Joueur)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Default" />
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" Class="py-4 d-flex d-sm-none">
+            <MudPaper Class="pa-8 ma-2" Outlined="true" Square="true">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6"><i>@Joueur.Nom @Joueur.Prenom</i></MudText>
+
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+
+                    <MudText Typo="Typo.caption"><i>n°@Joueur.Licence</i></MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" @onclick="(e)=>ViewClubDetail(Joueur.NumeroClub)"><i>@Joueur.NomClub</i></MudButton>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Color="Color.Default" OnClick="(evt)=>AddFavouriteJoueur(Joueur)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Default" />
+                </MudCardActions>
+
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" Class="py-8">
+            <MudTabs Elevation="2" Rounded="true" Centered="true" Class="my-6" Color="Color.Dark">
+                <MudTabPanel Icon="@Icons.Material.Filled.Api" Text="Points" BadgeColor="(Joueur.ProgressionSaisonToChip.Item1? Color.Success:Color.Error)">
+                    <MudContainer Class="p-2 mt-4" MaxWidth="MaxWidth.Small">
+                        <MudCard Outlined="true" Elevation="25" Class="p-4 mt-4" Square="true">
+
+                            <MudCardContent>
+                                <MudGrid Spacing="5" Justify="Justify.Center">
+                                    <MudItem xs="6">
+                                        <MudText Inline="true">Classement Officiel</MudText>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudChip Variant="Variant.Outlined" Color="(Classement.Item1? Color.Success:Color.Error)">@Classement.Item3</MudChip>
+                                        @if (!string.IsNullOrEmpty(Joueur.PropositionClassement))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.ArrowRight" Title="Favorite" />
+                                            <MudChip Variant="Variant.Outlined" Color="(Classement.Item2? Color.Success:Color.Error)">@Classement.Item4</MudChip>
+                                        }
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText Inline="true">Points Menuels</MudText>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudChip Variant="Variant.Outlined" Color="(PointsMensuels.Item1? Color.Success:Color.Error)">@PointsMensuels.Item2</MudChip>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText Inline="true">Points Officiels Phase 1</MudText>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudChip Variant="Variant.Outlined" Color="(PointsOfficielsPhase1.Item1? Color.Success:Color.Error)">@PointsOfficielsPhase1.Item2</MudChip>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText Inline="true">Progression Mensuelle</MudText>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudChip Variant="Variant.Outlined" Color="(Joueur.ProgressionMensuelleToChip.Item1? Color.Success:Color.Error)">@Joueur.ProgressionMensuelleToChip.Item2</MudChip>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText Inline="true">Progression Générale</MudText>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudChip Variant="Variant.Outlined" Color="(Joueur.ProgressionSaisonToChip.Item1? Color.Success:Color.Error)">@Joueur.ProgressionSaisonToChip.Item2</MudChip>
+                                    </MudItem>
+                                </MudGrid>
+
+                            </MudCardContent>
+                        </MudCard>
+                    </MudContainer>
+                </MudTabPanel>
+                @if (Licence != null)
+                {
+                    <MudTabPanel Icon="@Icons.Material.Filled.Build" Text="Licence" BadgeData="Licence.Type" BadgeColor="Color.Secondary">
+                        <MudContainer Class="p-2 mt-4" MaxWidth="MaxWidth.Small">
+                            <MudCard Outlined="true" Elevation="25" Class="p-4 mt-4" Square="true">
+                                <MudCardContent>
+                                    <MudGrid Spacing="5" Justify="Justify.Center">
+                                        <MudItem xs="6">
+                                            <MudText Inline="true">Type</MudText>
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudText> @(Licence.Type=="P"?"Promotionnel":"Compétition"  )</MudText>
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudText Inline="true">Catégorie</MudText>
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudText> @Licence.CategorieAge</MudText>
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudText Inline="true">Certificat Médical</MudText>
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudText Inline="true"> @(Licence.CertificatMedical=="C"?"Présenté":"Non présenté")</MudText>
+                                            @if (Licence.CertificatMedical == "C")
+                                            {
+                                                <MudText Inline="true">Le @Licence.DateValidationCertificatMedical</MudText>
+                                            }
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText Inline="true">Mutation</MudText>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText> @Licence.Mutation</MudText>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText Inline="true">Arbitre</MudText>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText> @Licence.Arbitre</MudText>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText Inline="true">Juge Arbitre</MudText>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText> @Licence.JugeArbitre</MudText>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudContainer>
+                </MudTabPanel>
+                }
+                <MudTabPanel Icon="@Icons.Material.Filled.Build" Text="Matchs" BadgeData="1" BadgeColor="Color.Success" />
+                <MudTabPanel Icon="@Icons.Material.Filled.Build" Text="Graphiques" BadgeData="1" BadgeColor="Color.Success" />
+            </MudTabs>
+        </MudItem>
+    </MudContainer>
+}
+else
+{
+    <PageTitle>Detail Club non identifé</PageTitle>
+}
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    public JoueurClassement Joueur { get; private set; }
+    public JoueurLicence Licence { get; private set; }
+    public ClubDetail ClubDetail { get; private set; }
+    //public Club Club { get; private set; }
+    public (bool, bool, string, string) Classement { get; private set; } = (false, false, "", "");
+    public (bool, string) PointsMensuels { get; private set; } = (false, "");
+    public (bool, string) PointsOfficielsPhase1 { get; private set; } = (false, "");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(Id))
+        {
+            var j = await spidRequest.GetJoueurDetailClassementAsync(new GetJoueurLicence() { Licence = Id });
+            Joueur = j;
+
+        }
+        if (Joueur != null)
+        {
+            double value;
+            double value1;
+
+            value = double.Parse(Joueur.Classement, CultureInfo.InvariantCulture);
+            value1 = double.Parse(Joueur.PropositionClassement, CultureInfo.InvariantCulture);
+
+            Classement = (value1 < value, value1 >= value, value.ToString("N1", CultureInfo.InvariantCulture), value1.ToString("N1", CultureInfo.InvariantCulture));
+
+            value = double.Parse(Joueur.Points, CultureInfo.InvariantCulture);
+            value1 = double.Parse(Joueur.PointsDebutSaison, CultureInfo.InvariantCulture);
+            PointsMensuels = (true, value.ToString("N1", CultureInfo.InvariantCulture));
+            PointsOfficielsPhase1 = ((value - value1) >= 0, value1.ToString("N1", CultureInfo.InvariantCulture));
+
+         
+            var cd = await spidRequest.GetClubDetailsAsync(new GetClubDetail() { Club = Joueur.NumeroClub });
+            ClubDetail = cd;
+
+            var l = await spidRequest.GetJoueurDetailLicenceAsync(new GetJoueurLicence() { Licence = Joueur.Licence });
+            Licence = l;
+            // Club = c.FirstOrDefault();
+        }
+        StateHasChanged();
+    }
+    protected void ViewClubDetail(string nclub)
+    {
+        NavigationManager.NavigateTo($"/club-detail/{nclub}");
+    }
+    protected void AddFavouriteJoueur(JoueurClassement joueur)
+    {
+
+    }
+}

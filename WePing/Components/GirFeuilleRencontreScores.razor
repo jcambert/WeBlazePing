@@ -1,0 +1,32 @@
+﻿@using WePing.Gir
+@using MudBlazor.Components
+
+@if (Scores != null)
+{
+
+
+    @foreach (var score in Scores)
+    {
+        <td class="text-center " width="15px"><MudText Typo="Typo.caption">@score.Valeur</MudText></td>
+    }
+    @for (var j = 1; j <= ((NombreMancheGagnante * 2) - 1) - Scores.Count; j++)
+    {
+        <td class="text-center @(EstFinie?"":"empty")" width="15px"></td>
+    }
+}
+@code {
+
+    
+    [Parameter]
+    public int NombreMancheGagnante { get; set; }
+
+    
+    [Parameter]
+    public Partie Partie { get; set; }
+
+
+
+    private List<Score> Scores => Partie?.Scores;
+
+    private bool EstFinie => Partie.EstFinie;
+}

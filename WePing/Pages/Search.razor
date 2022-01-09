@@ -1,0 +1,123 @@
+﻿@page "/search"
+@using MudBlazor
+@using WePing.Domain.Club.Domain
+@using WePing.Domain.Joueurs.Domain
+@using Domain.Club.Queries
+@using WePing.Domain.Joueurs.Queries
+@using WePing.Service.Spid
+@inject ISpidRequest spidRequest
+@inject ILogger<Search> _logger
+@inject NavigationManager NavigationManager
+<PageTitle>WePing</PageTitle>
+
+<MudOverlay Visible="_loading" DarkBackground="true">
+    <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+</MudOverlay>
+@if (Clubs != null)
+{
+    <MudContainer Class="p-4">
+
+
+        <MudGrid Spacing="5" Justify="Justify.FlexStart">
+            @foreach (var club in Clubs)
+            {
+                <MudItem xs="12" sm="8" md="4" Class="py-8">
+
+                    <MudCard Outlined="true" Class="align-self-stretch" Elevation="4">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Inline="true" Typo="Typo.subtitle1">@club.Nom</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudIconButton Icon="@Icons.Material.Filled.Home" Color="Color.Default" />
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudText>@club.Numero</MudText>
+
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" @onclick="(e)=>ViewClubDetail(club)">Détails</MudButton>
+                            <MudSpacer />
+                            <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Color="Color.Default" OnClick="(evt)=>AddFavouriteClub(club)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Default" />
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+
+            }
+            @foreach (var joueur in Joueurs)
+            {
+                <MudItem xs="12" sm="8" md="4" Class="py-8">
+
+                    <MudCard Outlined="true" Class="align-self-stretch" Elevation="4">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Inline="true" Typo="Typo.subtitle1">@joueur.Nom @joueur.Prenom</MudText>
+                                <MudText Inline="true" Typo="Typo.subtitle2">(n°: @joueur.Licence )</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudBadge Content="@((int)(Int32.Parse(joueur.Points))/100)" Color="Color.Primary" Overlap="true" Class="mx-6 my-4">
+                                    <MudIcon Icon="@(joueur.Sexe=="M"?"fas fa-male":"fas fa-female")" Color="Color.Default" />
+                                </MudBadge>
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudText>@joueur.NomClub</MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" @onclick="(e)=>ViewJoueurDetail(joueur)">Détails</MudButton>
+                            <MudSpacer />
+                            <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Color="Color.Default" OnClick="(evt)=>AddFavouriteJoueur(joueur)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Default" />
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudContainer>
+}
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Filter { get; set; }
+    protected List<Club> Clubs { get; init; } = new List<Club>();
+    protected List<Joueur> Joueurs { get; init; } = new List<Joueur>();
+    private bool _loading = false;
+    protected override async Task OnParametersSetAsync()
+    {
+
+        _loading = true;
+        Clubs.Clear();
+        Joueurs.Clear();
+        BrowseClubs bc = new BrowseClubs();
+        if (Int32.TryParse(Filter, out var value))
+        {
+            bc = new BrowseClubs() { Numero = Filter };
+            Clubs.AddRange(await spidRequest.GetClubsAsync(bc));
+        }
+        bc = new BrowseClubs() { Ville = Filter };
+        Clubs.AddRange(await spidRequest.GetClubsAsync(bc));
+
+        var j = await spidRequest.GetJoueursLicenceAsync(new BrowseJoueur() { Nom = Filter });
+        Joueurs.AddRange(j);
+        _loading = false;
+        StateHasChanged();
+    }
+    protected void AddFavouriteClub(Club club)
+    {
+        _logger.LogInformation($"Try add favourite Club {club.Nom}");
+    }
+    protected void AddFavouriteJoueur(Joueur joueur)
+    {
+        _logger.LogInformation($"Try add favourite Joueur{joueur.Nom} {joueur.Prenom} ");
+    }
+    protected void ViewClubDetail(Club club)
+    {
+        NavigationManager.NavigateTo($"/club-detail/{club.Numero}");
+    }
+    protected void ViewJoueurDetail(Joueur joueur)
+    {
+        NavigationManager.NavigateTo($"/joueur-detail/{joueur.Licence}");
+    }
+}

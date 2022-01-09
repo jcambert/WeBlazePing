@@ -1,0 +1,264 @@
+﻿@page "/club-detail/{id?}"
+@using WePing.Domain.ClubDetails.Queries
+@using WePing.Domain.Equipes.Queries
+@using Domain.Organismes.Queries
+@using WePing.Domain.ClubDetails.Domain
+@using WePing.Domain.Club.Domain
+@using WePing.Domain.Equipes.Domain
+@using WePing.Domain.Organismes.Domain
+@using WePing.Domain.Joueurs.Domain
+@using WePing.Domain.Club.Queries
+@using WePing.Domain.Joueurs.Queries
+@using WePing.Service.Spid
+@inject ISpidRequest spidRequest
+@inject ILogger<ViewClubDetail> _logger
+@inject Navigation Navigation
+@inject NavigationManager NavigationManager
+@if (Club != null && ClubDetail != null)
+{
+    <PageTitle>Detail Club @Club.Nom</PageTitle>
+    <MudContainer Class="py-4 p-4">
+        <MudItem xs="12" Class="py-4 d-none d-sm-flex">
+            <MudPaper Class="pa-8 ma-2" Outlined="true" Square="true">
+                <MudText Typo="Typo.h3"><i>@Club.Nom</i></MudText>
+                <MudText Typo="Typo.h6"><i>@Club.Numero</i></MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" Class="py-4 d-flex d-sm-none">
+            <MudPaper Class="pa-8 ma-2" Outlined="true" Square="true">
+                <MudText Typo="Typo.h6"><i>@Club.Nom</i></MudText>
+                <MudText Typo="Typo.caption"><i>@Club.Numero</i></MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" Class="py-8">
+            <MudTabs Elevation="2" Rounded="true" Centered="true" Class="my-6" Color="Color.Dark">
+                <MudTabPanel Icon="@Icons.Material.Filled.Api" Text="Détail" BadgeData='"!"' BadgeColor="Color.Error">
+                    <MudContainer Class="py-4 p-4">
+                        <MudGrid Spacing="5" Justify="Justify.FlexStart">
+                            <MudItem xs="12" sm="8" md="4" Class="py-8">
+                                <MudCard Outlined="true">
+                                    <MudCardHeader>
+                                        <CardHeaderContent>
+                                            <MudText Inline="true" Typo="Typo.h6"><u>Correspondant</u></MudText>
+                                        </CardHeaderContent>
+                                    </MudCardHeader>
+                                    <MudCardContent>
+                                        <MudText>@ClubDetail.NomCorrespondant @ClubDetail.PrenomCorrespondant</MudText>
+
+                                        <MudText>@ClubDetail.MailCorrespondant</MudText>
+                                        <MudText>@ClubDetail.TelephoneCorrespondant</MudText>
+                                    </MudCardContent>
+                                </MudCard>
+                            </MudItem>
+                            <MudItem xs="12" sm="8" md="4" Class="py-8">
+                                <MudCard Outlined="true">
+                                    <MudCardHeader>
+                                        <CardHeaderContent>
+                                            <MudText Inline="true" Typo="Typo.h6"><u>Salle</u></MudText>
+                                        </CardHeaderContent>
+                                    </MudCardHeader>
+                                    <MudCardContent>
+                                        <MudText>@ClubDetail.NomSalle</MudText>
+                                        <MudText>@ClubDetail.AdresseSalle1</MudText>
+                                        <MudText>@ClubDetail.AdresseSalle2</MudText>
+                                        <MudText>@ClubDetail.AdresseSalle3</MudText>
+                                        <MudText>@ClubDetail.CodePostalSalle</MudText>
+                                        <MudText>@ClubDetail.VilleSalle</MudText>
+                                    </MudCardContent>
+                                </MudCard>
+                            </MudItem>
+                        </MudGrid>
+                    </MudContainer>
+
+                </MudTabPanel>
+                @if (Joueurs.Count > 0)
+                {
+
+                    <MudTabPanel Icon="@Icons.Material.Filled.Build" Text="Joueurs" BadgeData="Joueurs.Count" BadgeColor="Color.Success">
+                        <MudContainer Class="py-4 p-4">
+                            <MudTable @ref="JoueurLicenceTable" Items="@Joueurs" Dense="false" Hover="true" Bordered="false" Striped="true" Filter="new Func<JoueurLicence,bool>(FilterFunc1)" @bind-SelectedItem="selectedJoueur" FixedHeader="true" FixedFooter="true" RowClassFunc="SelectedRowJoueurLicence" OnRowClick="RowClickEvent" T="JoueurLicence">
+                                <ToolBarContent>
+                                    <MudText Typo="Typo.h6">Joueurs</MudText>
+                                    <MudSpacer />
+                                    <MudTextField @bind-Value="searchString1" Placeholder="Rechercher" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                                </ToolBarContent>
+                                <HeaderContent>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<JoueurLicence, object>(x=>x.Sexe)">Sexe</MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<JoueurLicence, object>(x=>x.Nom)">Nom</MudTableSortLabel></MudTh>
+                                    <MudTh>Prenom</MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<JoueurLicence, object>(x=>x.Points)">Points</MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<JoueurLicence, object>(x=>x.PointsMensuels)">Mensuels</MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<JoueurLicence, object>(x=>x.CategorieAge)">Age</MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<JoueurLicence, object>(x=>x.ProgressionMensuelle)">Progression Mensuelle</MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<JoueurLicence, object>(x=>x.ProgressionSaison)">Progression Saison</MudTableSortLabel></MudTh>
+                                    <MudTh>Diplomé</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd><MudIcon Icon="@(context.Sexe=="M"? Icons.Material.Filled.Male: Icons.Material.Filled.Female)" Title="@(context.Sexe=="M"? "Masculin": "Feminin")" Style="@($"color:{Colors.Blue.Darken4}")" /></MudTd>
+                                    <MudTd DataLabel="Nom">@context.Nom</MudTd>
+                                    <MudTd DataLabel="Prenom">@context.Prenom</MudTd>
+                                    <MudTd DataLabel="Points">@context.Points</MudTd>
+                                    <MudTd DataLabel="Mensuels">@context.PointsMensuels</MudTd>
+                                    <MudTd DataLabel="Age">@context.CategorieAge</MudTd>
+                                    <MudTd DataLabel="Progression Mensuelle"><MudChip Variant="Variant.Outlined" Color="(context.ProgressionMensuelleToChip.Item1? Color.Success:Color.Error)">@context.ProgressionMensuelleToChip.Item2</MudChip></MudTd>
+                                    <MudTd DataLabel="Progression Saison"><MudChip Variant="Variant.Outlined" Color="(context.ProgressionSaisonToChip.Item1? Color.Success:Color.Error)">@context.ProgressionSaisonToChip.Item2</MudChip></MudTd>
+                                    <MudTd DataLabel="Diplomé">@context.Diplome</MudTd>
+                                </RowTemplate>
+                                <PagerContent>
+                                    <MudTablePager />
+                                </PagerContent>
+                            </MudTable>
+                        </MudContainer>
+                    </MudTabPanel>
+                }
+                <MudTabPanel Icon="@Icons.Material.Filled.BugReport" Text="Equipes Phase 1" BadgeData="@NumberOfEquipesPhase1">
+                    <MudContainer Class="py-4 p-4">
+                        <MudGrid Spacing="5" Justify="Justify.FlexStart">
+                            @foreach (var equipe in Equipes.Where(e => e.Nom.ToLower().Contains("phase 1")))
+                            {
+                                <MudItem xs="12" sm="8" md="4" Class="p-4">
+                                    <MudCard>
+                                        <MudCardContent>
+                                            <MudText>@equipe.Nom.Replace("- Phase 1","")</MudText>
+                                            <MudText>@GetDivision( equipe.Division)</MudText>
+                                            <MudText>@Organismes.Organismes.Where(o=>o.Code==equipe.Division.Split('_')[0]).FirstOrDefault()?.Libelle</MudText>
+
+                                        </MudCardContent>
+                                        <MudCardActions>
+                                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" @onclick="(e)=>GotoToResultEquipe(equipe)">Résultats</MudButton>
+                                            <MudSpacer />
+                                            <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Color="Color.Default" OnClick="(evt)=>AddFavourite(equipe.Id)" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Default" />
+                                        </MudCardActions>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudContainer>
+                </MudTabPanel>
+                <MudTabPanel Icon="@Icons.Material.Filled.BugReport" Text="Equipes Phase 2" BadgeData="@NumberOfEquipesPhase2" />
+                <MudTabPanel Icon="@Icons.Material.Filled.AccessTime" Text="Graphiqes" BadgeDot="true" BadgeColor="Color.Error" />
+            </MudTabs>
+        </MudItem>
+    </MudContainer>
+}
+else
+{
+    <PageTitle>Id Clubc non defini</PageTitle>
+}
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+    private int selectedJoueurLicenceRowNumber = -1;
+    private MudTable<JoueurLicence> JoueurLicenceTable;
+    protected Club Club { get; set; } = null;
+    protected ClubDetail ClubDetail { get; set; } = null;
+    protected List<Equipe> Equipes { get; init; } = new List<Equipe>();
+    protected ListeOrganismes Organismes { get; init; } = new ListeOrganismes();
+    //protected List<Joueur> Joueurs { get; init; } = new List<Joueur>();
+    protected List<JoueurLicence> Joueurs { get; init; } = new List<JoueurLicence>();
+    protected int NumberOfEquipesPhase1 => Equipes.Where(e => e.Nom.ToLower().Contains("phase 1")).Count();
+    protected int NumberOfEquipesPhase2 => Equipes.Where(e => e.Nom.ToLower().Contains("phase 2")).Count();
+    private string searchString1 = "";
+    private JoueurLicence selectedJoueur = null;
+    private bool FilterFunc1(JoueurLicence element) => FilterFunc(element, searchString1);
+    private bool FilterFunc(JoueurLicence element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.Nom.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        Club = null;
+        ClubDetail = null;
+        Equipes.Clear();
+        if (!string.IsNullOrEmpty(Id))
+        {
+            var Clubs = await spidRequest.GetClubsAsync(new BrowseClubs() { Numero = Id });
+            Club = Clubs.FirstOrDefault();
+            if (Club.Numero != Id)
+            {
+                Club = null;
+                StateHasChanged();
+                return;
+            }
+
+            ClubDetail = await spidRequest.GetClubDetailsAsync(new GetClubDetail() { Club = Id });
+            if (ClubDetail.Numero != Id)
+            {
+                ClubDetail = null;
+                StateHasChanged();
+                return;
+            }
+
+            var eq = await spidRequest.GetEquipesAsync(new BrowseEquipes() { NumClu = Id });
+            Equipes.AddRange(eq);
+
+            var org_l = await spidRequest.GetOrganismesAsync(new BrowseOrganismes() { Type = "L" });
+            var org_d = await spidRequest.GetOrganismesAsync(new BrowseOrganismes() { Type = "D" });
+            var org_f = await spidRequest.GetOrganismesAsync(new BrowseOrganismes() { Type = "F" });
+            var org_z = await spidRequest.GetOrganismesAsync(new BrowseOrganismes() { Type = "Z" });
+            Organismes.Organismes.AddRange(org_l);
+            Organismes.Organismes.AddRange(org_d);
+            Organismes.Organismes.AddRange(org_f);
+            Organismes.Organismes.AddRange(org_z);
+
+            Joueurs.Clear();
+            var j = await spidRequest.GetJoueursDetailLicenceAsync(new GetJoueurLicence() { Club = Id });
+            Joueurs.AddRange(j.Where(jj => !string.IsNullOrEmpty(jj.DateValidationCertificatMedical)).OrderBy(jj => jj.Nom).ThenBy(jj => jj.Prenom));
+            StateHasChanged();
+        }
+    }
+    private string GetOrgansime()
+    {
+        return string.Empty;
+    }
+    private string GetDivision(string division)
+    {
+        try{
+            var s = division.Split("_").Skip(1).TakeLast(1).First().Split(" ");
+            IEnumerable<string> level = s.Take(2);
+            IEnumerable<string> cat = s.TakeLast(2);
+            return $"{string.Join(" ", level)} {string.Join(" ", cat)}";
+
+        }
+        catch
+        {
+            return "";
+        }
+    }
+    private void GotoToResultEquipe(Equipe equipe)
+    {
+        NavigationManager.NavigateTo($"/result_equ?{equipe.Lien}");
+    }
+    protected void AddFavourite(string numero)
+    {
+        _logger.LogInformation($"Try add favourite {numero}");
+    }
+    private void RowClickEvent(TableRowClickEventArgs<JoueurLicence> tableRowClickEventArgs)
+    {
+        Navigation.NavigateTo($"/joueur-detail/{tableRowClickEventArgs.Item.Licence}");
+    }
+    private string SelectedRowJoueurLicence(JoueurLicence element, int rowNumber)
+    {
+        if (selectedJoueurLicenceRowNumber == rowNumber)
+        {
+            selectedJoueurLicenceRowNumber = -1;
+            return string.Empty;
+        }
+        else if (JoueurLicenceTable.SelectedItem != null && JoueurLicenceTable.SelectedItem.Equals(element))
+        {
+            selectedJoueurLicenceRowNumber = rowNumber;
+            return "selected";
+        }
+        else
+        {
+            return string.Empty;
+        }
+    }
+}

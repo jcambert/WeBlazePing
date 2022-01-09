@@ -1,0 +1,28 @@
+﻿@using WePing.Gir
+@using MudBlazor.Components
+
+<tr>
+    <th></th>
+    <th class="text-center" colspan="@((NombreMancheGagnante*2)-1)" width="15px">Score</th>
+    <th colspan="5" class="text-center">ORDRE DES PARTIES</th>
+    <th class="text-center" colspan="2">POINTS</th>
+</tr>
+<tr>
+    <th></th>
+    @for (var i = 1; i <= ((NombreMancheGagnante * 2) - 1); i++)
+    {
+        <th class="text-center">@i</th>
+    }
+    <th colspan="5"></th>
+    <th class="text-center">@LettreJoueurA</th>
+    <th class="text-center">@LettreJoueurB</th>
+</tr>
+@code {
+    [Parameter]
+    public ModeleRencontre Modele { get; set; }
+
+    private int NombreMancheGagnante => Modele?.NombreMancheGagnante ?? 3;
+
+    private string LettreJoueurA=>string.Join("", Modele.Parties.Select(p => p.JoueurA).OrderBy(p=>p).Distinct());
+    private string LettreJoueurB=>string.Join("", Modele.Parties.Select(p => p.JoueurB).OrderBy(p=>p).Distinct());
+}

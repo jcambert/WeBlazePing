@@ -1,0 +1,140 @@
+﻿@using WePing.Gir
+@using MudBlazor.Components
+@inject ILogger<GirFeuilleRencontreSaisieScoreDialogue> _logger;
+<MudDialog>
+    <DialogContent>
+        <MudContainer>
+            <MudGrid Spacing="2" Justify="Justify.FlexStart">
+                @foreach (var (index, equipe) in Joueurs.Select((i, v) => (v, i)))
+                {
+                    List<string> _double = (equipe.FirstOrDefault()?.NumeroClub ?? string.Empty) == Rencontre.EquipeDomicile ? DoubleA : DoubleB;
+                    Func<Partie,string> nomJoueurFunc=    (equipe.FirstOrDefault()?.NumeroClub ?? string.Empty) == Rencontre.EquipeDomicile ? (Partie p)=>p.JoueurA : (Partie p)=>p.JoueurB;
+                      
+                    <MudItem xs="6">
+                        <MudSimpleTable>
+                            <thead>
+                            <th>Equipe @(index==0?$"A {Rencontre.EquipeDomicile}":$"B {Rencontre.EquipeAdverse}")</th>
+                            </thead>
+                            <tbody>
+                                <GirFeuilleRencontreConstitutionDouble Rencontre="Rencontre" Equipe="equipe" Partie="Partie" DoubleEngage="_double" JoueurLettre="nomJoueurFunc" OnDoubleComplet="(bool value)=>SetPeutSauver()"/>
+
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+                }
+                
+
+            </MudGrid>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" OnClick="Save" Disabled="!PeutSauver">Enregistrer</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="Close">Quitter</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Rencontre Rencontre { get; set; }
+
+    [Parameter]
+    public Partie Partie { get; set; }
+
+    [Parameter]
+    public int NumeroDouble { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private bool PeutSauver { get; set; }
+
+    private List<List<Joueur>> Joueurs = new();
+    private List<Joueur> JoueursA;
+    private List<Joueur> JoueursB;
+    private List<string> DoubleA = new List<string>();
+    private List<string> DoubleB = new List<string>();
+    //private bool[] MontrerEquipe = new bool[2] { true, true };
+    private bool ParticipationUniqueAuDouble => Rencontre.Modele.ParticipationUniqueAuDouble;
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        Joueurs.Clear();
+        //Recherche d'autre double
+        List<Partie> _autresDoubles = ParticipationUniqueAuDouble ? Rencontre.Parties.Where(p => p.EstDouble && p.Index != Partie.Index && !string.IsNullOrEmpty(p.JoueurA)).ToList() : new List<Partie>();
+
+        if (_autresDoubles.Count > 0 && ParticipationUniqueAuDouble)
+        {
+            JoueursA = Rencontre.Joueurs.Where(j => j.NumeroClub == Rencontre.EquipeDomicile && !_autresDoubles.Any(a => a.JoueurA.Contains(j.Ordre))).OrderBy(j => j.Ordre).ToList();
+            JoueursB = Rencontre.Joueurs.Where(j => j.NumeroClub == Rencontre.EquipeAdverse && !_autresDoubles.Any(a => a.JoueurB.Contains(j.Ordre))).OrderBy(j => j.Ordre).ToList();
+
+        }
+        else
+        {
+            JoueursA = Rencontre.Joueurs.Where(j => j.NumeroClub == Rencontre.EquipeDomicile).OrderBy(j => j.Ordre).ToList();
+            JoueursB = Rencontre.Joueurs.Where(j => j.NumeroClub == Rencontre.EquipeAdverse).OrderBy(j => j.Ordre).ToList();
+        }
+
+        Joueurs.Add(JoueursA);
+        Joueurs.Add(JoueursB);
+
+        /*foreach (var equipe in Joueurs.Where(e => e.Count() == 2))
+            {
+            foreach (var joueur in equipe)
+                {
+                List<string> _double = joueur.NumeroClub == Rencontre.EquipeDomicile ? DoubleA : DoubleB;
+                SelectJoueur(_double, joueur, true);
+        }
+
+        }*/
+
+        //StateHasChanged();
+    }
+
+    void Save()
+    {
+        if (DoubleA.Count() == 2)
+        {
+            var ja = DoubleA.OrderBy(j => j).Select(lettre => Rencontre.GetJoueur(lettre).GetJoueurNomPrenom());
+            Partie.NomJoueurA = string.Join("-", ja);
+            Partie.JoueurA = string.Join("-", DoubleA);
+        }
+        if (DoubleB.Count() == 2)
+        {
+            var jb = DoubleB.OrderBy(j => j).Select(lettre => Rencontre.GetJoueur(lettre).GetJoueurNomPrenom());
+            Partie.NomJoueurB = string.Join("-", jb);
+            Partie.JoueurB = string.Join("-", DoubleB);
+        }
+        MudDialog.Close(true);
+    }
+    void Close()
+    {
+        MudDialog.Cancel();
+        if (OnClose.HasDelegate)
+            Task.Run(() => OnClose.InvokeAsync());
+    }
+
+    void SelectJoueur(List<string> _double, Joueur j, object o)
+    {
+        /* bool value = (bool)o;
+         if (value && !_double.Contains(j.Ordre))
+             _double.Add(j.Ordre);
+             else
+             _double.Remove(j.Ordre);*/
+
+    }
+
+    /* bool CheckDisabled(List<string> _double, Joueur j)
+         {
+         bool res = _double.Count == 2 && !_double.Any(d => d == j.Ordre);
+         return res;
+     }*/
+
+    void SetPeutSauver()
+    {
+        PeutSauver = DoubleA.Count() == 2 && DoubleB.Count() == 2;
+    }
+}

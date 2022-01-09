@@ -1,0 +1,44 @@
+﻿.appbar-search {
+    color: var(--mud-palette-primary-text);
+}
+.wrap-text {
+    overflow: hidden;
+}
+.clickable-text:hover{
+    cursor:pointer;
+}
+.feuille-rencontre {
+    .empty {
+        background-image: linear-gradient(to bottom right, transparent calc(50% - 1px), red, transparent calc(50% + 1px));
+    }
+
+    .empty:hover{
+        cursor:pointer
+    }
+}
+
+.blinking>span {
+    animation: blinkingText 1.2s infinite;
+}
+
+@keyframes blinkingText {
+    0% {
+        color: #000;
+    }
+
+    49% {
+        color: #000;
+    }
+
+    60% {
+        color: transparent;
+    }
+
+    99% {
+        color: transparent;
+    }
+
+    100% {
+        color: #000;
+    }
+}

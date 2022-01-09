@@ -1,0 +1,272 @@
+﻿@page "/rencontre-detail/{ida}/{idb}"
+@using WePing.Domain.Rencontres.Queries
+@using WePing.Domain.Rencontres.Domain
+@using WePing.Domain.Joueurs.Domain
+@using WePing.Domain.Club.Domain
+@using WePing.Service.Spid
+@inject ISpidRequest spidRequest
+@inject ILogger<ViewEquipeResult> _logger
+@inject ICalculateurPoints Calculateur
+@inject Navigation Navigation
+<MudOverlay Visible="_loading" DarkBackground="true">
+    <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+</MudOverlay>
+@if (Rencontre != null)
+{
+    <PageTitle>Rencontre @Equip_1 - @Equip_2</PageTitle>
+    <MudContainer Class="p-4">
+        <MudGrid Justify="Justify.Center">
+
+            <MudItem xs="12" md="6" Class="py-8">
+                <MudSimpleTable Outlined="true" Square="true" Elevation="20" Striped="true" Dense="true">
+                    <tbody>
+                        <tr>
+                            <td class="text-end">
+                                <MudText Color="ColorEquipeA">@Resultat.EquipeA</MudText>
+                            </td>
+                            <td class="text-end">
+                                <MudText Color="ColorEquipeA">@Resultat.ResultatA</MudText>
+                            </td>
+                            <td class="text-start">
+                                <MudText Color="ColorEquipeB">@Resultat.ResultatB</MudText>
+                            </td>
+                            <td class="text-start">
+                                <MudText Color="ColorEquipeB">@Resultat.EquipeB</MudText>
+                            </td>
+                        </tr>
+                    </tbody>
+                </MudSimpleTable>
+            </MudItem>
+        </MudGrid>
+        <MudGrid Justify="Justify.Center">
+
+            <MudItem xs="12" md="6" Class="py-8">
+                <MudSimpleTable Outlined="true" Square="true" Elevation="20" Striped="true" Dense="true">
+                    <tbody>
+                        <tr>
+                            <td class="text-start" colspan="2">
+                                <MudButton Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.Groups" Color="Color.Secondary">@Resultat.EquipeA</MudButton>
+                            </td>
+                            <td class="text-start   d-none d-lg-flex">
+                                <MudChip Variant="Variant.Outlined" Color="Color.Success">@SetsGagnesPerdu.Item1.Item1</MudChip>
+                                <MudChip Variant="Variant.Outlined" Color="Color.Error">@SetsGagnesPerdu.Item1.Item2</MudChip>
+                            </td>
+                            <td class="text-end">
+                                <MudChip Variant="Variant.Outlined" Color="Color.Default" Icon="@Icons.Material.Filled.Calculate" IconColor="Color.Success">@Rencontre.TotalPoints.Item1</MudChip>
+                            </td>
+                        </tr>
+                        @foreach (var joueur in Rencontre.Joueurs)
+                        {
+                            <tr>
+                                <td class="text-start">
+                                    <MudIcon Icon="@(joueur.SexeA=="M"?Icons.Material.Filled.Male:Icons.Material.Filled.Female)"></MudIcon>
+                                </td>
+                                <td class="text-start">
+
+                                    <MudText @onclick="@((e)=>ViewJoueurDetail("A",joueur.JoueurA))" Class="clickable-text">@joueur.JoueurA</MudText>
+                                </td>
+                                <td class="text-start"><MudChip Variant="Variant.Outlined" Color="(joueur.PointsGagnesPerdusA>0?Color.Success:Color.Error)" Size="Size.Small">@joueur.PointsGagnesPerdusA</MudChip></td>
+                                <td class="text-end">
+                                    <MudText>@joueur.PointsA</MudText>
+                                </td>
+                            </tr>
+                        }
+                        @if (ClubA != null)
+                        {
+                            <tr>
+                                <td class="text-start" colspan="3">
+                                    <MudButton Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.Groups" Color="Color.Secondary" OnClick="(e)=>ViewClubDetail(ClubA)">@ClubA.Nom</MudButton>
+                                </td>
+                            </tr>
+                        }
+
+                    </tbody>
+                </MudSimpleTable>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="py-8">
+                <MudSimpleTable Outlined="true" Square="true" Elevation="20" Striped="true" Dense="true">
+                    <tbody>
+                        <tr>
+                            <td class="text-start" colspan="2">
+                                <MudButton Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.Groups" Color="Color.Secondary">@Resultat.EquipeB</MudButton>
+                            </td>
+                            <td class="text-start   d-none d-lg-flex">
+                                <MudChip Variant="Variant.Outlined" Color="Color.Success">@SetsGagnesPerdu.Item2.Item1</MudChip>
+                                <MudChip Variant="Variant.Outlined" Color="Color.Error">@SetsGagnesPerdu.Item2.Item2</MudChip>
+                            </td>
+                            <td class="text-end">
+                                <MudChip Variant="Variant.Outlined" Color="Color.Default" Icon="@Icons.Material.Filled.Calculate" IconColor="Color.Success">@Rencontre.TotalPoints.Item2</MudChip>
+
+                            </td>
+                        </tr>
+                        @foreach (var joueur in Rencontre.Joueurs)
+                        {
+                            <tr>
+                                <td class="text-start">
+                                    <MudIcon Icon="@(joueur.SexeB=="M"?Icons.Material.Filled.Male:Icons.Material.Filled.Female)"></MudIcon>
+                                </td>
+                                <td class="text-start">
+                                    <MudText  @onclick="@((e)=>ViewJoueurDetail("B",joueur.JoueurB))" Class="clickable-text">@joueur.JoueurB</MudText>
+                                </td>
+                                <td class="text-start"><MudChip Variant="Variant.Outlined" Color="(joueur.PointsGagnesPerdusB>0?Color.Success:Color.Error)" Size="Size.Small">@joueur.PointsGagnesPerdusB</MudChip></td>
+                                <td class="text-end">
+                                    <MudText>@joueur.PointsB</MudText>
+                                </td>
+                            </tr>
+                        }
+                        @if (ClubB != null)
+                        {
+                            <tr>
+                                <td class="text-start" colspan="3">
+                                    <MudButton Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.Groups" Color="Color.Secondary" OnClick="(e)=>ViewClubDetail(ClubB)">@ClubB.Nom</MudButton>
+                                </td>
+                            </tr>
+                        }
+
+                    </tbody>
+                </MudSimpleTable>
+            </MudItem>
+        </MudGrid>
+        <MudGrid Justify="Justify.Center">
+
+            <MudItem xs="12" Class="py-8">
+                <MudSimpleTable Elevation="20">
+                    <tbody>
+                        @foreach (var partie in Rencontre.Parties)
+                        {
+                            <tr>
+                                <td class="text-start  d-none d-lg-flex">
+                                    @if (!partie.IsDouble)
+                                    {
+                                        <MudChip Variant="Variant.Outlined" Color="(partie.PointsGagnesPerdusA>0?Color.Success:Color.Error)" Size="Size.Small">@partie.PointsGagnesPerdusA</MudChip>
+                                    }
+                                    else
+                                    {
+                                        <MudChip Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small">0</MudChip>
+                                    }
+                                </td>
+
+                                <td class="text-end"><MudText Color="GetPartieColor(partie.ScoreA)"  @onclick="@((e)=>ViewJoueurDetail("A",partie.JoueurA))" Class="clickable-text">@partie.JoueurA</MudText> </td>
+
+
+                                <td class="text-center d-none d-lg-flex">
+                                    @foreach (var item in partie.Sets.ToList())
+                                    {
+                                        <MudChip Variant="Variant.Outlined" Color="GetSetColor(item)" Inline="true" Size="Size.Small">@item</MudChip>
+
+                                    }
+                                </td>
+                                <td class="text-start"><MudText Color="GetPartieColor(partie.ScoreB)"  @onclick="@((e)=>ViewJoueurDetail("B",partie.JoueurB))" Class="clickable-text">@partie.JoueurB</MudText></td>
+                                <td class="text-end  d-none d-lg-flex">
+                                    @if (!partie.IsDouble)
+                                    {
+                                        <MudChip Variant="Variant.Outlined" Color="(partie.PointsGagnesPerdusB>0?Color.Success:Color.Error)" Size="Size.Small">@partie.PointsGagnesPerdusB</MudChip>
+                                    }
+                                    else
+                                    {
+                                        <MudChip Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small">0</MudChip>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+}
+else
+{
+    <PageTitle>Rencontre Détail</PageTitle>
+}
+@code {
+    [Parameter]
+    public string Ida { get; set; }
+    [Parameter]
+    public string Idb { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Is_Retour { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Phase { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Res_1 { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Res_2 { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Renc_Id { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Equip_1 { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Equip_2 { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Equip_Id1 { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Equip_Id2 { get; set; }
+    private bool _loading = false;
+    private Rencontre Rencontre { get; set; }
+    private RencontreResultat Resultat => Rencontre?.Resultat.First();
+    private ((int, int), (int, int)) SetsGagnesPerdu { get; set; } = ((0, 0), (0, 0));
+    private Color ColorEquipeA => Resultat.ScoreA > Resultat.ScoreB ? Color.Success : Resultat.ScoreA < Resultat.ScoreB ? Color.Error : Color.Default;
+    private Color ColorEquipeB => Resultat.ScoreB > Resultat.ScoreA ? Color.Success : Resultat.ScoreB < Resultat.ScoreA ? Color.Error : Color.Default;
+
+
+    private Color GetPartieColor(string score) => score == "1" ? Color.Success : Color.Error;
+    private Color GetSetColor(int value) => value > 0 ? Color.Success : Color.Error;
+
+    private Club ClubA { get; set; }
+    private Club ClubB { get; set; }
+
+    private List<Joueur> JoueursA { get; set; } = new();
+    private List<Joueur> JoueursB { get; set; } = new();
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        var res = await spidRequest.GetDetailRencontreAsync(new GetRencontre() { Is_Retour = Is_Retour, Equip_1 = Equip_1, Equip_2 = Equip_2, Equip_Id1 = Equip_Id1, Equip_Id2 = Equip_Id2, Phase = Phase, Renc_Id = Renc_Id, Res_1 = Res_1, Res_2 = Res_2 });
+        Rencontre = res;
+        foreach (var partie in Rencontre.Parties)
+        {
+            var ja = Rencontre.Joueurs.Where(j => j.JoueurA == partie.JoueurA).FirstOrDefault();
+            var jb = Rencontre.Joueurs.Where(j => j.JoueurB == partie.JoueurB).FirstOrDefault();
+            if (ja == null || jb == null)
+            {
+                partie.IsDouble = (ja == null && jb == null);
+                continue;
+            }
+            var points = Calculateur.Calculate(ja.PointsA, jb.PointsB, partie.ScoreA == "1", 1.0);
+            partie.PointsGagnesPerdusA = points.Item1;
+            partie.PointsGagnesPerdusB = points.Item2;
+            ja.PointsGagnesPerdusA += points.Item1;
+            jb.PointsGagnesPerdusB += points.Item2;
+        }
+        SetsGagnesPerdu = Rencontre.SetsGagnesPerdu;
+
+        ClubA = (await spidRequest.GetClubsAsync(new Domain.Club.Queries.BrowseClubs() { Numero = Ida })).FirstOrDefault();
+        ClubB = (await spidRequest.GetClubsAsync(new Domain.Club.Queries.BrowseClubs() { Numero = Idb })).FirstOrDefault();
+        var _ja= await spidRequest.GetJoueursLicenceAsync(new Domain.Joueurs.Queries.BrowseJoueur() { Club=Ida});
+        JoueursA.AddRange(_ja);
+        var _jb= await spidRequest.GetJoueursLicenceAsync(new Domain.Joueurs.Queries.BrowseJoueur() { Club=Idb});
+        JoueursB.AddRange(_jb);
+        _loading = false;
+        StateHasChanged();
+    }
+    protected void ViewClubDetail(Club club)
+    {
+        Navigation.NavigateTo($"/club-detail/{club.Numero}");
+    }
+    protected void ViewJoueurDetail(string type,string nom)
+    {
+        List<Joueur> joueurs=type=="A"?JoueursA:JoueursB;
+        Joueur joueur=joueurs.Where(j=>$"{j.Nom} {j.Prenom}"==nom).FirstOrDefault();
+        if(joueur!=null)
+            Navigation.NavigateTo($"/joueur-detail/{joueur.Licence}");
+    }
+}
